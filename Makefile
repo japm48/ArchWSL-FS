@@ -2,11 +2,8 @@ OUT_TGZ=rootfs.tar.gz
 
 DLR=curl
 DLR_FLAGS=-L
-BASE_URL=http://mirrors.edge.kernel.org/archlinux/iso/2022.10.01/archlinux-bootstrap-x86_64.tar.gz
-FRTCP_URL=https://github.com/yuk7/arch-prebuilt/releases/download/21082800/fakeroot-tcp-1.25.3-2-x86_64.pkg.tar.zst
-GLIBC_URL=https://github.com/yuk7/arch-prebuilt/releases/download/22100100/glibc-2.36-2-x86_64.pkg.tar.zst
-GLIBC_LINUX4_URL=https://github.com/yuk7/arch-prebuilt/releases/download/22100100/lib32-glibc-2.36-2-x86_64.pkg.tar.zst
-AL_KEYRING_URL=http://mirrors.edge.kernel.org/archlinux/core/os/x86_64/archlinux-keyring-20220927-1-any.pkg.tar.zst
+BASE_URL=https://mirrors.edge.kernel.org/archlinux/iso/2023.11.01/archlinux-bootstrap-x86_64.tar.gz
+AL_KEYRING_URL=https://mirrors.edge.kernel.org/archlinux/core/os/x86_64/archlinux-keyring-20231107-1-any.pkg.tar.zst
 PAC_PKGS=archlinux-keyring base less nano sudo vim curl
 
 all: $(OUT_TGZ)
@@ -17,7 +14,7 @@ $(OUT_TGZ): rootfinal.tmp
 	cd root.x86_64; sudo bsdtar -zcpf ../$(OUT_TGZ) *
 	sudo chown `id -un` $(OUT_TGZ)
 
-rootfinal.tmp: glibc.tmp fakeroot.tmp locale.tmp glibc-linux4.pkg.tar.zst archlinux-keyring.pkg.tar.zst
+rootfinal.tmp: locale.tmp archlinux-keyring.pkg.tar.zst
 	@echo -e '\e[1;31mCleaning files from rootfs...\e[m'
 	yes | sudo chroot root.x86_64 /usr/bin/pacman -Scc
 	sudo umount root.x86_64/sys
@@ -31,24 +28,9 @@ rootfinal.tmp: glibc.tmp fakeroot.tmp locale.tmp glibc-linux4.pkg.tar.zst archli
 	sudo rm -rf `sudo find root.x86_64/tmp/ -type f`
 	@echo -e '\e[1;31mCopy Extra files to rootfs...\e[m'
 	sudo cp bash_profile root.x86_64/root/.bash_profile
-	sudo cp glibc-linux4.pkg.tar.zst root.x86_64/root/glibc-linux4.pkg.tar.zst
 	sudo cp archlinux-keyring.pkg.tar.zst root.x86_64/root/archlinux-keyring.pkg.tar.zst
 	sudo cp wsl.conf root.x86_64/etc/wsl.conf
 	echo > rootfinal.tmp
-
-fakeroot.tmp: proc-tmp.tmp glibc.tmp fakeroot-tcp.pkg.tar.zst
-	@echo -e '\e[1;31mInstalling fakeroot-tcp...\e[m'
-	sudo cp -f fakeroot-tcp.pkg.tar.zst root.x86_64/root/fakeroot-tcp.pkg.tar.zst
-	yes | sudo chroot root.x86_64 /usr/bin/pacman -U /root/fakeroot-tcp.pkg.tar.zst
-	sudo rm -rf root.x86_64/root/fakeroot-tcp.pkg.tar.zst
-	touch fakeroot.tmp
-
-glibc.tmp: proc-tmp.tmp pacpkgs.tmp glibc.pkg.tar.zst
-	@echo -e '\e[1;31mInstalling glibc...\e[m'
-	sudo cp -f glibc.pkg.tar.zst root.x86_64/root/glibc.tar.zst
-	yes | sudo chroot root.x86_64 /usr/bin/pacman -U /root/glibc.tar.zst
-	sudo rm -rf root.x86_64/root/glibc.pkg.tar.zst
-	touch  glibc.tmp
 
 pacpkgs.tmp: proc-tmp.tmp resolv-tmp.tmp mirrorlist-tmp.tmp paccnf-tmp.tmp
 	@echo -e '\e[1;31mInstalling basic packages...\e[m'
@@ -93,19 +75,7 @@ root.x86_64.tmp: base.tar.gz
 
 archlinux-keyring.pkg.tar.zst:
 	@echo -e '\e[1;31mDownloading archlinux-keyring.pkg.tar.zst...\e[m'
-	$(DLR) $(DLR_FLAGS) $(GLIBC_URL) -o archlinux-keyring.pkg.tar.zst
-
-glibc.pkg.tar.zst:
-	@echo -e '\e[1;31mDownloading glibc.pkg.tar.zst...\e[m'
-	$(DLR) $(DLR_FLAGS) $(GLIBC_URL) -o glibc.pkg.tar.zst
-
-glibc-linux4.pkg.tar.zst:
-	@echo -e '\e[1;31mDownloading glibc-linux4.pkg.tar.zst...\e[m'
-	$(DLR) $(DLR_FLAGS) $(GLIBC_LINUX4_URL) -o glibc-linux4.pkg.tar.zst
-
-fakeroot-tcp.pkg.tar.zst:
-	@echo -e '\e[1;31mDownloading fakeroot-tcp.pkg.tar.zst...\e[m'
-	$(DLR) $(DLR_FLAGS) $(FRTCP_URL) -o fakeroot-tcp.pkg.tar.zst
+	$(DLR) $(DLR_FLAGS) $(AL_KEYRING_URL) -o archlinux-keyring.pkg.tar.zst
 
 base.tar.gz:
 	@echo -e '\e[1;31mDownloading base.tar.gz...\e[m'
@@ -130,9 +100,6 @@ cleantmp:
 	-rm *.tmp
 
 cleanpkg:
-	-rm glibc.pkg.tar.zst
-	-rm glibc-linux4.pkg.tar.zst
-	-rm fakeroot-tcp.pkg.tar.zst
 	-rm archlinux-keyring.pkg.tar.zst
 
 cleanbase:
